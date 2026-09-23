@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.13",
+    "cryptography>=43",
     "pydantic-settings>=2.4",
     "sqlalchemy>=2.0",
     "tzdata>=2024.1",
@@ -43,4 +44,4 @@ extend-exclude = ["src/heron/migrations/versions"]
 select = ["E", "F", "I", "B", "UP", "S"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]  # plain asserts are fine in tests
+"tests/**" = ["S101", "S105", "S106"]  # plain asserts are fine in tests
