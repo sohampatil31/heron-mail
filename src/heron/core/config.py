@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data")
     # IANA timezone name used to decide what "today" means for the dashboard.
     timezone: str = "UTC"
+    # Fernet key for encrypting mailbox passwords. If unset, a key is
+    # generated on first run and stored in data_dir/secret.key.
+    secret_key: str | None = None
 
     @field_validator("timezone")
     @classmethod
