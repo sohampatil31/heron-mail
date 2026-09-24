@@ -9,11 +9,14 @@ from alembic import context
 
 from heron.core.config import get_settings
 from heron.core.db import create_db_engine
+from heron.core.models import metadata
 
 config = context.config
 
-# Table metadata for autogenerate. Models arrive with the schema on Day 5.
-target_metadata = None
+# Used only as a diffing aid for `alembic revision --autogenerate`.
+# Migrations in versions/ are still written and reviewed by hand; this is
+# not a source of truth on its own.
+target_metadata = metadata
 
 
 def _run(connection) -> None:
