@@ -11,6 +11,7 @@ requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.13",
     "cryptography>=43",
+    "imapclient>=3.0",
     "pydantic-settings>=2.4",
     "sqlalchemy>=2.0",
     "tzdata>=2024.1",
