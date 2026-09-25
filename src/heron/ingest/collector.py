@@ -14,20 +14,23 @@ ARCHITECTURE.md - "raw mail is stored once").
 from __future__ import annotations
 
 import hashlib
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from email import message_from_bytes
 from email.header import decode_header
 from email.message import Message
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from sqlalchemy.engine import Engine
 
 from heron.core.crypto import SecretBox
 from heron.core.storage import insert_email_if_new
 from heron.core.timeutil import DateRange, parse_email_date_header
-from heron.ingest.imap_client import ImapClient
+from heron.ingest.imap_client import FetchedMessage, ImapClient
+
+StoreOutcome = Literal["stored_new", "stored_duplicate", "outside_range"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -66,58 +69,84 @@ def fetch_and_store_range(
         folder_info = client.select_folder_readonly(folder)
         criteria = [
             "SINCE",
-            _imap_date_string(wide_range.start),
+            imap_date_string(wide_range.start),
             "BEFORE",
-            _imap_date_string(wide_range.end),
+            imap_date_string(wide_range.end),
         ]
         uids = client.search_uids(criteria)
         fetched = client.fetch_messages(uids)
 
-    stored_new = 0
-    stored_duplicate = 0
-    outside_range = 0
-
-    for uid, message in fetched.items():
-        # IMAP's SINCE/BEFORE compares calendar dates with no time-of-day or
-        # timezone component, so the widened search can return messages
-        # just outside the exact range. This is the precise filter that
-        # widened_for_imap_search()'s docstring promises.
-        if not date_range.contains(message.internal_date):
-            outside_range += 1
-            continue
-
-        parsed = message_from_bytes(message.raw_bytes)
-        content_hash = hashlib.sha256(message.raw_bytes).hexdigest()
-        eml_path = _store_raw_message(eml_dir, content_hash, message.raw_bytes)
-
-        _row_id, inserted = insert_email_if_new(
+    counts = Counter(
+        store_if_in_range(
             engine,
             account_id=account["id"],
             folder=folder,
             uidvalidity=folder_info.uidvalidity,
             uid=uid,
-            content_hash=content_hash,
-            internal_date=message.internal_date,
-            eml_path=str(eml_path),
-            message_id=_decode_header(parsed, "Message-Id"),
-            header_date=parse_email_date_header(parsed.get("Date")),
-            subject=_decode_header(parsed, "Subject"),
-            from_address=_decode_header(parsed, "From"),
+            message=message,
+            date_range=date_range,
+            eml_dir=eml_dir,
         )
-        if inserted:
-            stored_new += 1
-        else:
-            stored_duplicate += 1
+        for uid, message in fetched.items()
+    )
 
     return CollectorResult(
         fetched=len(fetched),
-        stored_new=stored_new,
-        stored_duplicate=stored_duplicate,
-        outside_range=outside_range,
+        stored_new=counts["stored_new"],
+        stored_duplicate=counts["stored_duplicate"],
+        outside_range=counts["outside_range"],
     )
 
 
-def _imap_date_string(ts: datetime) -> str:
+def store_if_in_range(
+    engine: Engine,
+    *,
+    account_id: int,
+    folder: str,
+    uidvalidity: int,
+    uid: int,
+    message: FetchedMessage,
+    date_range: DateRange,
+    eml_dir: Path,
+) -> StoreOutcome:
+    """Store one already-fetched message if its INTERNALDATE falls in date_range.
+
+    This is the per-message unit of work shared by fetch_and_store_range()
+    (which processes a whole batch at once) and worker.runner.run_job()
+    (which processes messages in smaller batches so it can checkpoint
+    between them). Keeping it here means both call sites agree on exactly
+    what "store a message" means: the same hashing, the same header
+    decoding, the same dedup key.
+    """
+    # IMAP's SINCE/BEFORE compares calendar dates with no time-of-day or
+    # timezone component, so a widened search can return messages just
+    # outside the exact range. This is the precise filter that
+    # widened_for_imap_search()'s docstring promises.
+    if not date_range.contains(message.internal_date):
+        return "outside_range"
+
+    parsed = message_from_bytes(message.raw_bytes)
+    content_hash = hashlib.sha256(message.raw_bytes).hexdigest()
+    eml_path = _store_raw_message(eml_dir, content_hash, message.raw_bytes)
+
+    _row_id, inserted = insert_email_if_new(
+        engine,
+        account_id=account_id,
+        folder=folder,
+        uidvalidity=uidvalidity,
+        uid=uid,
+        content_hash=content_hash,
+        internal_date=message.internal_date,
+        eml_path=str(eml_path),
+        message_id=_decode_header(parsed, "Message-Id"),
+        header_date=parse_email_date_header(parsed.get("Date")),
+        subject=_decode_header(parsed, "Subject"),
+        from_address=_decode_header(parsed, "From"),
+    )
+    return "stored_new" if inserted else "stored_duplicate"
+
+
+def imap_date_string(ts: datetime) -> str:
     """Format a UTC datetime as an IMAP search date, e.g. '01-Jun-2026' (RFC 3501)."""
     return ts.strftime("%d-%b-%Y")
 

@@ -12,6 +12,7 @@ share one definition of "what an emails row looks like" instead of two.
 from __future__ import annotations
 
 from sqlalchemy import (
+    CheckConstraint,
     Column,
     ForeignKey,
     Index,
@@ -76,4 +77,26 @@ emails = Table(
     Column("created_at", Text, nullable=False),
     UniqueConstraint("account_id", "folder", "uidvalidity", "uid"),
     Index("ix_emails_account_internal_date", "account_id", "internal_date"),
+)
+
+jobs = Table(
+    "jobs",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("account_id", Integer, ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False),
+    Column("folder", Text, nullable=False),
+    # The requested range, as UTC storage strings - see core.timeutil.DateRange.
+    Column("range_start", Text, nullable=False),
+    Column("range_end", Text, nullable=False),
+    Column("status", Text, nullable=False, server_default="pending"),
+    # The highest IMAP UID successfully stored so far. On a crash mid-run,
+    # the worker resumes by skipping UIDs at or below this value instead of
+    # re-fetching the whole range from the server (see worker/runner.py).
+    Column("checkpoint_uid", Integer, nullable=True),
+    Column("error", Text, nullable=True),
+    Column("created_at", Text, nullable=False),
+    Column("started_at", Text, nullable=True),
+    Column("finished_at", Text, nullable=True),
+    CheckConstraint("status IN ('pending', 'running', 'done', 'failed')", name="ck_jobs_status"),
+    Index("ix_jobs_status", "status", "id"),
 )
