@@ -115,7 +115,10 @@ class ImapClient:
     def list_folders(self) -> list[str]:
         """Return the mailbox's folder names."""
         conn = self._require_connection()
-        return [name for _flags, _delimiter, name in conn.list_folders()]
+        try:
+            return [name for _flags, _delimiter, name in conn.list_folders()]
+        except (OSError, IMAPClientError) as exc:
+            raise ImapConnectionError(f"could not list folders: {exc}") from exc
 
     def select_folder_readonly(self, folder: str) -> FolderInfo:
         """EXAMINE a folder (never SELECT), so nothing about it can be modified.
@@ -127,13 +130,19 @@ class ImapClient:
         with prior data under the old value.
         """
         conn = self._require_connection()
-        info = conn.select_folder(folder, readonly=True)
+        try:
+            info = conn.select_folder(folder, readonly=True)
+        except (OSError, IMAPClientError) as exc:
+            raise ImapConnectionError(f"could not open folder {folder!r}: {exc}") from exc
         return FolderInfo(uidvalidity=info[b"UIDVALIDITY"], exists=info[b"EXISTS"])
 
     def search_uids(self, criteria: Sequence[str]) -> list[int]:
         """Return UIDs matching an IMAP search, e.g. ["SINCE", date, "BEFORE", date]."""
         conn = self._require_connection()
-        return conn.search(criteria)
+        try:
+            return conn.search(criteria)
+        except (OSError, IMAPClientError) as exc:
+            raise ImapConnectionError(f"search failed: {exc}") from exc
 
     def fetch_messages(self, uids: Sequence[int]) -> dict[int, FetchedMessage]:
         """Fetch raw message bytes and INTERNALDATE for the given UIDs.
@@ -147,7 +156,10 @@ class ImapClient:
         if not uids:
             return {}
         conn = self._require_connection()
-        raw = conn.fetch(uids, ["BODY.PEEK[]", "INTERNALDATE"])
+        try:
+            raw = conn.fetch(uids, ["BODY.PEEK[]", "INTERNALDATE"])
+        except (OSError, IMAPClientError) as exc:
+            raise ImapConnectionError(f"fetch failed: {exc}") from exc
         return {
             uid: FetchedMessage(raw_bytes=data[b"BODY[]"], internal_date=data[b"INTERNALDATE"])
             for uid, data in raw.items()
