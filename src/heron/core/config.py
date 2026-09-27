@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # Fernet key for encrypting mailbox passwords. If unset, a key is
     # generated on first run and stored in data_dir/secret.key.
     secret_key: str | None = None
+    # Bearer token required on protected API routes. If unset, one is
+    # generated on first run and stored in data_dir/api_token.
+    api_token: str | None = None
 
     @field_validator("timezone")
     @classmethod
