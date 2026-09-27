@@ -100,3 +100,19 @@ jobs = Table(
     CheckConstraint("status IN ('pending', 'running', 'done', 'failed')", name="ck_jobs_status"),
     Index("ix_jobs_status", "status", "id"),
 )
+
+coverage = Table(
+    "coverage",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("account_id", Integer, ForeignKey("accounts.id", ondelete="CASCADE"), nullable=False),
+    Column("folder", Text, nullable=False),
+    # A range of time already fully ingested for this account/folder, as
+    # UTC storage strings. core.coverage keeps these merged and
+    # non-overlapping - see its module docstring - so this table never
+    # needs to be read as anything but a tidy, minimal set of segments.
+    Column("range_start", Text, nullable=False),
+    Column("range_end", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Index("ix_coverage_account_folder", "account_id", "folder", "range_start"),
+)
