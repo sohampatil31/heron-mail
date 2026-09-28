@@ -61,6 +61,32 @@ def get_account(engine: Engine, account_id: int) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+def list_accounts(engine: Engine) -> list[dict[str, Any]]:
+    """Return every account, oldest first.
+
+    Rows include encrypted_password, like get_account(): this layer returns
+    what is stored. Anything user-facing (the API) is responsible for
+    leaving that column out.
+    """
+    stmt = select(accounts).order_by(accounts.c.id)
+    with engine.connect() as connection:
+        rows = connection.execute(stmt).mappings().all()
+    return [dict(row) for row in rows]
+
+
+def delete_account(engine: Engine, account_id: int) -> bool:
+    """Delete an account. Returns False if it did not exist.
+
+    Foreign keys cascade (see core/models.py), so the account's emails, jobs,
+    and coverage rows go with it. Raw .eml files on disk are left in place:
+    they are named by content hash and may be shared, so removing them is a
+    separate cleanup concern.
+    """
+    with engine.begin() as connection:
+        result = connection.execute(accounts.delete().where(accounts.c.id == account_id))
+    return result.rowcount == 1
+
+
 def insert_email_if_new(
     engine: Engine,
     *,
