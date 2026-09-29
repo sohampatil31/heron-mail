@@ -52,6 +52,48 @@ def get_job(engine: Engine, job_id: int) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+def list_jobs(
+    engine: Engine,
+    *,
+    account_id: int | None = None,
+    status: str | None = None,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    """Return jobs newest first, optionally filtered by account and/or status.
+
+    Newest-first (rather than the queue's own oldest-first claim order) is
+    what a status view wants: the most recent activity at the top.
+    """
+    stmt = select(jobs).order_by(jobs.c.id.desc()).limit(limit)
+    if account_id is not None:
+        stmt = stmt.where(jobs.c.account_id == account_id)
+    if status is not None:
+        stmt = stmt.where(jobs.c.status == status)
+    with engine.connect() as connection:
+        rows = connection.execute(stmt).mappings().all()
+    return [dict(row) for row in rows]
+
+
+def claim_job(engine: Engine, job_id: int, *, now: datetime | None = None) -> dict[str, Any] | None:
+    """Atomically claim one specific pending job by id. None if it does not exist or is not pending.
+
+    claim_next_job() is for a worker loop pulling whatever is oldest;
+    this is for a caller (e.g. the ingest endpoint) that just created a
+    specific job and wants to run it immediately, not race it against
+    whatever else might be queued.
+    """
+    started_at = _timestamp(now)
+    stmt = (
+        jobs.update()
+        .where(jobs.c.id == job_id, jobs.c.status == "pending")
+        .values(status="running", started_at=started_at)
+        .returning(*jobs.c)
+    )
+    with engine.begin() as connection:
+        row = connection.execute(stmt).mappings().first()
+    return dict(row) if row else None
+
+
 def claim_next_job(engine: Engine, *, now: datetime | None = None) -> dict[str, Any] | None:
     """Atomically claim the oldest pending job, marking it running. None if the queue is empty.
 
