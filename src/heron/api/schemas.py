@@ -5,9 +5,10 @@ encrypted one. Responses are built from it (never from a raw database row),
 so a stored secret cannot leak by accident when a column is added later.
 """
 
+from datetime import date
 from typing import Annotated
 
-from pydantic import BaseModel, Field, SecretStr, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, StringConstraints, field_validator
 
 _TrimmedText = Annotated[str, StringConstraints(strip_whitespace=True)]
 
@@ -47,3 +48,52 @@ class MailboxOut(BaseModel):
 class ConnectionTestResult(BaseModel):
     ok: bool
     error: str | None = None
+
+
+class JobOut(BaseModel):
+    """A job row as the API shows it. Extra columns in the row are ignored."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: int
+    account_id: int
+    folder: str
+    status: str
+    range_start: str | None = None
+    range_end: str | None = None
+    error: str | None = None
+    created_at: str | None = None
+
+
+class EmailOut(BaseModel):
+    """Message metadata only: never the raw .eml path or body."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: int
+    account_id: int
+    folder: str
+    uid: int
+    subject: str | None = None
+    sender: str | None = None
+    internal_date: str
+    header_date: str | None = None
+
+
+class StatsOut(BaseModel):
+    total_emails: int
+    emails_last_24h: int
+    oldest_internal_date: str | None = None
+    newest_internal_date: str | None = None
+
+
+class IngestRequest(BaseModel):
+    mailbox_id: int
+    folder: Annotated[_TrimmedText, Field(min_length=1, max_length=255)] = "INBOX"
+    start_date: date
+    end_date: date
+
+
+class IngestResponse(BaseModel):
+    gaps_found: int
+    jobs: list[JobOut]
