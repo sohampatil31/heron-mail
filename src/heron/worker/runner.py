@@ -21,6 +21,7 @@ from typing import Any
 
 from sqlalchemy.engine import Engine
 
+from heron.core.coverage import record_coverage
 from heron.core.crypto import SecretBox
 from heron.core.jobs import mark_done, mark_failed, update_checkpoint
 from heron.core.storage import get_account
@@ -96,6 +97,11 @@ def run_job(
         mark_failed(engine, job["id"], str(exc))
         return
 
+    # Only recorded on full success: a job that fails partway through has
+    # its checkpoint (see above) for a resume, but must not claim coverage
+    # for a range it never finished - core.coverage.get_gaps() would then
+    # wrongly treat the unfetched remainder as already ingested.
+    record_coverage(engine, account_id=account["id"], folder=job["folder"], date_range=date_range)
     mark_done(engine, job["id"])
 
 

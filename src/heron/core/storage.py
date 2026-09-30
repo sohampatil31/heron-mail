@@ -10,10 +10,10 @@ Two design decisions from ARCHITECTURE.md live here:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.engine import Engine
 
@@ -160,7 +160,39 @@ def get_emails_in_range(
     return [dict(row) for row in rows]
 
 
-def _now_string() -> str:
-    from datetime import UTC
+def get_stats(
+    engine: Engine, account_id: int | None = None, *, now: datetime | None = None
+) -> dict[str, Any]:
+    """Aggregate counts over stored emails, optionally scoped to one account.
 
+    Deliberately just counts, not verdicts or severities: no scoring exists
+    yet (that is Phase 4 - analysis rules and scoring), so this reports what
+    is actually known today rather than a placeholder for what isn't.
+    """
+    now = now or datetime.now(UTC)
+    cutoff = to_utc_storage_string(now - timedelta(hours=24))
+
+    totals_stmt = select(
+        func.count(emails.c.id),
+        func.min(emails.c.internal_date),
+        func.max(emails.c.internal_date),
+    )
+    recent_stmt = select(func.count(emails.c.id)).where(emails.c.internal_date >= cutoff)
+    if account_id is not None:
+        totals_stmt = totals_stmt.where(emails.c.account_id == account_id)
+        recent_stmt = recent_stmt.where(emails.c.account_id == account_id)
+
+    with engine.connect() as connection:
+        total, oldest, newest = connection.execute(totals_stmt).one()
+        last_24h = connection.execute(recent_stmt).scalar_one()
+
+    return {
+        "total_emails": total,
+        "emails_last_24h": last_24h,
+        "oldest_internal_date": oldest,
+        "newest_internal_date": newest,
+    }
+
+
+def _now_string() -> str:
     return to_utc_storage_string(datetime.now(UTC))
