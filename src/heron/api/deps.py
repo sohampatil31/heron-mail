@@ -10,6 +10,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.engine import Engine
 
+from heron.core.config import Settings
 from heron.core.crypto import SecretBox
 
 
@@ -21,5 +22,10 @@ def get_secret_box(request: Request) -> SecretBox:
     return request.app.state.secret_box
 
 
+def get_app_settings(request: Request) -> Settings:
+    return request.app.state.settings
+
+
 EngineDep = Annotated[Engine, Depends(get_engine)]
 SecretBoxDep = Annotated[SecretBox, Depends(get_secret_box)]
+SettingsDep = Annotated[Settings, Depends(get_app_settings)]
