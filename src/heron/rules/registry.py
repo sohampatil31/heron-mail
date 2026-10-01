@@ -5,12 +5,15 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from heron.rules import authentication, reply_to
+from heron.rules import attachments, authentication, display_name, link_text, reply_to
 from heron.rules.base import Finding, Rule, RuleContext
 
 RULES: tuple[Rule, ...] = (
     Rule(authentication.RULE_ID, 1, authentication.check),
     Rule(reply_to.RULE_ID, 1, reply_to.check),
+    Rule(display_name.RULE_ID, 1, display_name.check),
+    Rule(link_text.RULE_ID, 1, link_text.check),
+    Rule(attachments.RULE_ID, 1, attachments.check),
 )
 
 
