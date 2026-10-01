@@ -1,0 +1,15 @@
+From: Sender <sender@example.org>
+To: rcpt@example.org
+Subject: cut off
+Content-Type: multipart/mixed; boundary="XXBOUNDXX"
+
+--XXBOUNDXX
+Content-Type: text/plain
+
+visible text
+--XXBOUNDXX
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="data.bin"
+Content-Transfer-Encoding: base64
+
+QUJD!!REVG

@@ -1,0 +1,45 @@
+From: Example News <news@newsletter.example.com>
+To: reader@example.org
+Subject: Your weekly digest
+Date: Wed, 30 Sep 2026 06:00:00 +0000
+Message-ID: <digest-42@newsletter.example.com>
+List-Unsubscribe: <https://newsletter.example.com/unsub?id=42>
+Authentication-Results: mx.example.org; spf=pass
+ smtp.mailfrom=newsletter.example.com; dkim=pass
+ header.d=newsletter.example.com; dmarc=pass
+ header.from=newsletter.example.com
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="===============4346219984783156849=="
+
+--===============4346219984783156849==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+This week: three stories. Read online: https://newsletter.example.com/w/42
+
+--===============4346219984783156849==
+MIME-Version: 1.0
+Content-Type: multipart/related;
+ boundary="===============3264691176688948164=="
+
+--===============3264691176688948164==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><img src=3D"cid:logo1"><p>This week: three stories.</p><a href=3D=
+"https://newsletter.example.com/w/42">Read online</a></body></html>
+
+--===============3264691176688948164==
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-ID: <logo1>
+MIME-Version: 1.0
+Content-Disposition: inline
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6
+kgAAAABJRU5ErkJggg==
+
+--===============3264691176688948164==--
+
+--===============4346219984783156849==--

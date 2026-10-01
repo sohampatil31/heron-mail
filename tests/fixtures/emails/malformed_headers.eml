@@ -1,0 +1,4 @@
+Received: from nowhere
+Content-Type: text/plain; charset=x-no-such-charset
+
+broken ÿþ bytes here
