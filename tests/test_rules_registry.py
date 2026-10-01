@@ -22,9 +22,12 @@ def test_findings_are_most_severe_first_and_use_their_rules_prefix():
     results = run_rules(context("phish_invoice.eml"))
     assert results.errors == ()
     assert [f.rule_id for f in results.findings] == [
-        "auth.dmarc_fail",  # HIGH
-        "auth.spf_fail",  # MEDIUM, registry order keeps auth before reply_to
-        "reply_to.mismatch",  # MEDIUM
+        "auth.dmarc_fail",  # HIGH findings first, in registry order
+        "display_name.address_mismatch",
+        "link.text_mismatch",
+        "attachment.double_extension",
+        "auth.spf_fail",  # then MEDIUM, again in registry order
+        "reply_to.mismatch",
     ]
     prefixes = {rule.id for rule in RULES}
     assert all(f.rule_id.split(".")[0] in prefixes for f in results.findings)
