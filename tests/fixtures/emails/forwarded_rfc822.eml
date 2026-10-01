@@ -1,0 +1,29 @@
+From: Forwarder <fwd@example.org>
+To: me@example.org
+Subject: Fwd: see below
+Message-ID: <fwd-1@example.org>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============0253478610642437442=="
+
+--===============0253478610642437442==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Forwarding this, see attached.
+
+--===============0253478610642437442==
+Content-Type: message/rfc822
+Content-Transfer-Encoding: 8bit
+Content-Disposition: attachment; filename="forwarded.eml"
+MIME-Version: 1.0
+
+From: Inner Sender <inner@example.net>
+To: someone@example.net
+Subject: Inner subject
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+INNER SECRET BODY
+
+--===============0253478610642437442==--

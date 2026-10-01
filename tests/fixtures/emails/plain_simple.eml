@@ -1,0 +1,14 @@
+From: Alice Example <Alice@Example.COM>
+To: bob@example.org, Carol <carol@example.org>
+Cc: dave@example.net
+Subject: Lunch on Friday?
+Date: Tue, 29 Sep 2026 09:15:00 +0000
+Message-ID: <plain-001@example.com>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Hi Bob,
+Are you free for lunch on Friday?
+
+Alice

@@ -1,0 +1,48 @@
+Return-Path: <bounce@mailer.invalid>
+Received: from mail.mailer.invalid (mail.mailer.invalid [203.0.113.9]) by
+ mx.example.org; Tue, 29 Sep 2026 11:00:03 +0000
+Received: from relay1.mailer.invalid (relay1.mailer.invalid [203.0.113.8]) by
+ mail.mailer.invalid; Tue, 29 Sep 2026 11:00:01 +0000
+Received: from [10.0.0.5] (unknown) by relay1.mailer.invalid; Tue, 29 Sep 2026
+ 11:00:00 +0000
+Authentication-Results: mx.example.org; spf=fail smtp.mailfrom=mailer.invalid;
+ dkim=none; dmarc=fail header.from=mailer.invalid
+From: "security@example-bank.test" <noreply@mailer.invalid>
+Reply-To: Billing Desk <billing@freemail.example>
+To: victim@example.org
+Subject: Action required: verify your account
+Date: Tue, 29 Sep 2026 11:00:00 +0000
+Message-ID: <phish-7@mailer.invalid>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============8518264544022210033=="
+
+--===============8518264544022210033==
+Content-Type: multipart/alternative;
+ boundary="===============7958993528816453556=="
+
+--===============7958993528816453556==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Your account is locked. Verify now: http://198.51.100.7/login
+See attached invoice.
+
+--===============7958993528816453556==
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html><body><p>Your account is locked.</p><a href=3D"http://198.51.100.7/logi=
+n">https://www.example-bank.test/login</a></body></html>
+
+--===============7958993528816453556==--
+
+--===============8518264544022210033==
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="invoice.pdf.exe"
+MIME-Version: 1.0
+
+bm90IGEgcmVhbCBleGVjdXRhYmxlLCBqdXN0IGJ5dGVz
+
+--===============8518264544022210033==--
