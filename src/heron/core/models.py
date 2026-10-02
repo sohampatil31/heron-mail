@@ -116,3 +116,57 @@ coverage = Table(
     Column("created_at", Text, nullable=False),
     Index("ix_coverage_account_folder", "account_id", "folder", "range_start"),
 )
+
+analyses = Table(
+    "analyses",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    # One analysis per email: re-analysing replaces it (see
+    # core.analysis_storage), so the row always reflects the latest rules.
+    Column("email_id", Integer, ForeignKey("emails.id", ondelete="CASCADE"), nullable=False),
+    Column("score", Integer, nullable=False),
+    Column("verdict", Text, nullable=False),
+    # Fingerprint of the rules and weights that produced this result
+    # (analysis.scoring.rules_version). A different value means "stale".
+    Column("rules_version", Text, nullable=False),
+    # 0 if some rules crashed and their findings are missing from the score.
+    Column("complete", Integer, nullable=False, server_default="1"),
+    # JSON list of "rule: ExceptionType" strings, or NULL.
+    Column("rule_errors", Text, nullable=True),
+    Column("analyzed_at", Text, nullable=False),
+    UniqueConstraint("email_id"),
+    CheckConstraint("verdict IN ('clean', 'suspicious', 'phishing')", name="ck_analyses_verdict"),
+    CheckConstraint("complete IN (0, 1)", name="ck_analyses_complete"),
+    Index("ix_analyses_rules_version", "rules_version"),
+)
+
+alerts = Table(
+    "alerts",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    # One alert per email. Re-analysis refreshes its content but never its
+    # status, so a false-positive verdict from a person survives a re-score.
+    Column("email_id", Integer, ForeignKey("emails.id", ondelete="CASCADE"), nullable=False),
+    Column("status", Text, nullable=False, server_default="open"),
+    Column("severity", Text, nullable=False),
+    Column("verdict", Text, nullable=False),
+    Column("score", Integer, nullable=False),
+    Column("title", Text, nullable=False),
+    Column("summary", Text, nullable=False),
+    # The full AlertDraft.to_dict() as JSON: reasons, evidence, actions.
+    Column("details_json", Text, nullable=False),
+    Column("rules_version", Text, nullable=False),
+    Column("created_at", Text, nullable=False),
+    Column("updated_at", Text, nullable=False),
+    Column("acknowledged_at", Text, nullable=True),
+    # When it was resolved or marked a false positive; NULL while open.
+    Column("closed_at", Text, nullable=True),
+    UniqueConstraint("email_id"),
+    CheckConstraint(
+        "status IN ('open', 'acknowledged', 'resolved', 'false_positive')",
+        name="ck_alerts_status",
+    ),
+    CheckConstraint("severity IN ('medium', 'high')", name="ck_alerts_severity"),
+    CheckConstraint("verdict IN ('suspicious', 'phishing')", name="ck_alerts_verdict"),
+    Index("ix_alerts_status", "status", "id"),
+)
