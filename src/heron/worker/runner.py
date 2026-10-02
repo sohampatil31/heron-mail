@@ -28,6 +28,7 @@ from heron.core.storage import get_account
 from heron.core.timeutil import DateRange, from_utc_storage_string
 from heron.ingest.collector import imap_date_string, store_if_in_range
 from heron.ingest.imap_client import ImapClient, ImapConnectionError
+from heron.worker.analysis import analyze_pending_safely
 
 DEFAULT_BATCH_SIZE = 50
 
@@ -103,6 +104,7 @@ def run_job(
     # wrongly treat the unfetched remainder as already ingested.
     record_coverage(engine, account_id=account["id"], folder=job["folder"], date_range=date_range)
     mark_done(engine, job["id"])
+    analyze_pending_safely(engine, eml_dir)
 
 
 def _chunked(items: Sequence[int], size: int) -> Iterator[Sequence[int]]:
