@@ -81,6 +81,31 @@ class HeronClient:
     def list_mailboxes(self) -> Any:
         return self._request("GET", f"{API_PREFIX}/mailboxes")
 
+    def create_mailbox(
+        self, email_address: str, imap_host: str, imap_port: int, password: str
+    ) -> Any:
+        return self._request(
+            "POST",
+            f"{API_PREFIX}/mailboxes",
+            json_body=_mailbox_body(email_address, imap_host, imap_port, password),
+        )
+
+    def test_mailbox_settings(
+        self, email_address: str, imap_host: str, imap_port: int, password: str
+    ) -> Any:
+        """Try a login with these settings without saving anything: {ok, error}."""
+        return self._request(
+            "POST",
+            f"{API_PREFIX}/mailboxes/test",
+            json_body=_mailbox_body(email_address, imap_host, imap_port, password),
+        )
+
+    def test_mailbox(self, mailbox_id: int) -> Any:
+        return self._request("POST", f"{API_PREFIX}/mailboxes/{int(mailbox_id)}/test")
+
+    def delete_mailbox(self, mailbox_id: int) -> Any:
+        return self._request("DELETE", f"{API_PREFIX}/mailboxes/{int(mailbox_id)}")
+
     def get_stats(self, mailbox_id: int | None = None) -> Any:
         return self._request("GET", f"{API_PREFIX}/stats", params={"mailbox_id": mailbox_id})
 
@@ -148,6 +173,17 @@ class HeronClient:
             return json.loads(raw)
         except ValueError:
             raise ApiError(502, "The API did not return JSON. Is this a Heron address?") from None
+
+
+def _mailbox_body(
+    email_address: str, imap_host: str, imap_port: int, password: str
+) -> dict[str, Any]:
+    return {
+        "email_address": email_address,
+        "imap_host": imap_host,
+        "imap_port": imap_port,
+        "password": password,
+    }
 
 
 def _error_for(status: int, body: bytes) -> ApiError:
