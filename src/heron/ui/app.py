@@ -16,6 +16,7 @@ from typing import Any
 
 import streamlit as st
 
+from heron.ui import mailbox_wizard
 from heron.ui.api_client import ApiError, ApiUnreachable, HeronClient, Unauthorized
 from heron.ui.auth import login
 from heron.ui.config import api_url
@@ -76,6 +77,7 @@ def _shell(client: HeronClient) -> None:
     pages: dict[str, Callable[[HeronClient], None]] = {
         "Overview": _overview,
         "Mailboxes": _mailboxes,
+        "Add mailbox": lambda client: mailbox_wizard.render(client, _call),
     }
     with st.sidebar:
         st.header("Heron")
