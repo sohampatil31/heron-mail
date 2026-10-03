@@ -109,6 +109,23 @@ class HeronClient:
     def get_stats(self, mailbox_id: int | None = None) -> Any:
         return self._request("GET", f"{API_PREFIX}/stats", params={"mailbox_id": mailbox_id})
 
+    def get_activity(
+        self,
+        *,
+        mailbox_id: int | None = None,
+        days: int | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> Any:
+        """KPIs and a timeline. No dates means today (in the server's time zone)."""
+        params = {
+            "mailbox_id": mailbox_id,
+            "days": days,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+        return self._request("GET", f"{API_PREFIX}/stats/activity", params=params)
+
     def alert_counts(self, mailbox_id: int | None = None) -> Any:
         return self._request(
             "GET", f"{API_PREFIX}/alerts/counts", params={"mailbox_id": mailbox_id}

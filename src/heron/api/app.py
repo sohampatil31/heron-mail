@@ -22,7 +22,7 @@ from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from heron.api import alerts, emails, ingest, jobs, mailboxes, stats
+from heron.api import activity, alerts, emails, ingest, jobs, mailboxes, stats
 from heron.api.auth import require_api_token, resolve_api_token
 from heron.core.config import Settings, get_settings
 from heron.core.crypto import SecretBox
@@ -83,6 +83,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     v1.include_router(emails.router)
     v1.include_router(stats.router)
     v1.include_router(alerts.router)
+    v1.include_router(activity.router)
     app.include_router(v1)
 
     return app
