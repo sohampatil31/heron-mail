@@ -1,0 +1,12 @@
+# Settings for `streamlit run src/heron/ui/app.py`, read from the repo root.
+
+[browser]
+# A security tool shouldn't phone home.
+gatherUsageStats = false
+
+[server]
+# Local only by default. Change deliberately (e.g. in Docker) and put the UI
+# behind something that adds TLS before exposing it beyond this machine.
+address = "127.0.0.1"
+headless = true
+enableXsrfProtection = true
