@@ -17,6 +17,7 @@ dependencies = [
     "tzdata>=2024.1",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
+    "streamlit>=1.36",
 ]
 
 [project.optional-dependencies]
