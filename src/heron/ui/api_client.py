@@ -109,6 +109,25 @@ class HeronClient:
     def get_stats(self, mailbox_id: int | None = None) -> Any:
         return self._request("GET", f"{API_PREFIX}/stats", params={"mailbox_id": mailbox_id})
 
+    def ingest(self, mailbox_id: int, start_date: str, end_date: str, folder: str = "INBOX") -> Any:
+        """Fetch only the parts of the range not already stored; returns gaps and jobs."""
+        body = {
+            "mailbox_id": int(mailbox_id),
+            "folder": folder,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+        return self._request("POST", f"{API_PREFIX}/ingest", json_body=body)
+
+    def list_jobs(
+        self, *, mailbox_id: int | None = None, status: str | None = None, limit: int = 50
+    ) -> Any:
+        params = {"mailbox_id": mailbox_id, "status": status, "limit": limit}
+        return self._request("GET", f"{API_PREFIX}/jobs", params=params)
+
+    def get_job(self, job_id: int) -> Any:
+        return self._request("GET", f"{API_PREFIX}/jobs/{int(job_id)}")
+
     def get_activity(
         self,
         *,
