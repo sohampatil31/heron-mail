@@ -89,7 +89,13 @@ class ImapClient:
         if self._conn is not None:
             return
         try:
-            conn = IMAPClient(self._host, port=self._port, ssl=self._use_ssl, timeout=self._timeout)
+            conn = IMAPClient(
+                self._host,
+                port=self._port,
+                ssl=self._use_ssl,
+                timeout=self._timeout,
+                normalise_times=False,
+            )
         except OSError as exc:
             raise ImapConnectionError(f"could not reach {self._host}:{self._port}: {exc}") from exc
 
@@ -161,7 +167,9 @@ class ImapClient:
         except (OSError, IMAPClientError) as exc:
             raise ImapConnectionError(f"fetch failed: {exc}") from exc
         return {
-            uid: FetchedMessage(raw_bytes=data[b"BODY[]"], internal_date=data[b"INTERNALDATE"])
+            uid: FetchedMessage(
+                raw_bytes=data[b"BODY[]"], internal_date=_as_aware(data[b"INTERNALDATE"])
+            )
             for uid, data in raw.items()
         }
 
@@ -169,3 +177,14 @@ class ImapClient:
         if self._conn is None:
             raise ImapConnectionError("not connected - call connect() first")
         return self._conn
+
+
+def _as_aware(moment: datetime) -> datetime:
+    """Never let a naive time into the vault.
+
+    imapclient converts INTERNALDATE to naive *local* time unless it is created
+    with normalise_times=False. We pass that flag, and this is the second
+    line of defence: if a naive value ever arrives anyway, treat it as local
+    time and attach the zone instead of failing later in the date-range check.
+    """
+    return moment if moment.tzinfo is not None else moment.astimezone()

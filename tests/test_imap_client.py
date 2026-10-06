@@ -21,10 +21,11 @@ class FakeIMAPClient:
     fail_connect = False
     fail_login = False
 
-    def __init__(self, host, port=993, ssl=True, timeout=30):
+    def __init__(self, host, port=993, ssl=True, timeout=30, normalise_times=True):
         if FakeIMAPClient.fail_connect:
             raise OSError("connection refused")
         self.host, self.port, self.ssl, self.timeout = host, port, ssl, timeout
+        self.normalise_times = normalise_times
         self.logged_in_as = None
         self.logged_out = False
         self.shutdown_called = False

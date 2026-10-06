@@ -26,6 +26,7 @@ from heron.api import activity, alerts, emails, ingest, jobs, mailboxes, stats
 from heron.api.auth import require_api_token, resolve_api_token
 from heron.core.config import Settings, get_settings
 from heron.core.crypto import SecretBox
+from heron.core.job_recovery import fail_interrupted_jobs
 from heron.core.migrate import init_database
 
 API_V1_PREFIX = "/api/v1"
@@ -48,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.api_token = resolve_api_token(settings.api_token, settings.data_dir)
     app.state.engine = init_database(settings)
+    fail_interrupted_jobs(app.state.engine)
     app.state.secret_box = SecretBox.from_settings(settings.secret_key, settings.data_dir)
 
     @app.exception_handler(RequestValidationError)

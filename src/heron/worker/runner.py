@@ -15,6 +15,7 @@ the two paths can never disagree about what "store a message" means.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,9 @@ from heron.ingest.imap_client import ImapClient, ImapConnectionError
 from heron.worker.analysis import analyze_pending_safely
 
 DEFAULT_BATCH_SIZE = 50
+
+
+logger = logging.getLogger(__name__)
 
 
 def run_job(
@@ -96,6 +100,11 @@ def run_job(
                 update_checkpoint(engine, job["id"], batch[-1])
     except ImapConnectionError as exc:
         mark_failed(engine, job["id"], str(exc))
+        return
+    except Exception as exc:  # noqa: BLE001 - a crash must never leave a job "running"
+        logger.exception("job %s crashed", job["id"])
+        reason = " ".join(str(exc).split())[:200]
+        mark_failed(engine, job["id"], f"Unexpected error ({type(exc).__name__}): {reason}")
         return
 
     # Only recorded on full success: a job that fails partway through has
