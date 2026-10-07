@@ -1,20 +1,36 @@
 """Regression tests for the "ts must be timezone-aware" crash on a real fetch."""
 
+import inspect
 from datetime import UTC, datetime, timedelta, timezone
 from unittest.mock import MagicMock
+
+from imapclient import IMAPClient as RealIMAPClient
 
 from heron.ingest import imap_client
 from heron.ingest.imap_client import ImapClient, _as_aware
 
 
-def test_the_imap_connection_asks_for_timezone_aware_times(monkeypatch):
+def connect_with_a_recording_fake(monkeypatch) -> MagicMock:
     fake = MagicMock()
     monkeypatch.setattr(imap_client, "IMAPClient", fake)
     with ImapClient("imap.example.org", "me@example.org", "pw"):
         pass
-    # Without this flag imapclient returns naive local times, and the date-range
+    return fake
+
+
+def test_the_constructor_arguments_are_valid_for_the_installed_imapclient(monkeypatch):
+    # Test fakes accept anything, which once hid an argument the real library
+    # doesn't have. Binding against the real signature can't be fooled that way.
+    fake = connect_with_a_recording_fake(monkeypatch)
+    signature = inspect.signature(RealIMAPClient.__init__)
+    signature.bind(None, *fake.call_args.args, **fake.call_args.kwargs)  # TypeError if invalid
+
+
+def test_the_connection_switches_off_naive_local_times(monkeypatch):
+    fake = connect_with_a_recording_fake(monkeypatch)
+    # Without this imapclient returns naive local times, and the date-range
     # filter (correctly) refuses them.
-    assert fake.call_args.kwargs["normalise_times"] is False
+    assert fake.return_value.normalise_times is False
 
 
 def test_a_naive_time_is_given_a_zone_instead_of_being_passed_on():

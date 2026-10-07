@@ -38,7 +38,7 @@ class FakeIMAPClient:
     fetch_calls: list[list[int]] = []
     fail_on_search = False
 
-    def __init__(self, host, port=993, ssl=True, timeout=30, normalise_times=True):
+    def __init__(self, host, port=993, ssl=True, timeout=30):
         pass
 
     def login(self, email_address, password):

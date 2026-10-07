@@ -94,8 +94,10 @@ class ImapClient:
                 port=self._port,
                 ssl=self._use_ssl,
                 timeout=self._timeout,
-                normalise_times=False,
             )
+            # imapclient returns naive local times unless this is switched off.
+            # It is an attribute, not a constructor argument.
+            conn.normalise_times = False
         except OSError as exc:
             raise ImapConnectionError(f"could not reach {self._host}:{self._port}: {exc}") from exc
 

@@ -46,7 +46,7 @@ class FakeIMAPClient:
     messages: dict[int, tuple[bytes, datetime]] = {}
     uidvalidity = 5001
 
-    def __init__(self, host, port=993, ssl=True, timeout=30, normalise_times=True):
+    def __init__(self, host, port=993, ssl=True, timeout=30):
         pass
 
     def login(self, email_address, password):
